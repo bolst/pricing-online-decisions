@@ -1,2 +1,8 @@
 .DS_Store
 
+*.aux
+*.bcf
+*.log
+*.out
+*.run*
+*.synctex*
