@@ -139,7 +139,16 @@ We will first observe that the natural greedy algorithm has a very poor performa
     The competitive ratio for the natural greedy algorithm (and hence if agents act greedily) is exponential in $n$ where $n$ is the number of online requests.
 \end{claim}
 \begin{proof}
-    Consider the following instance for any $\epsilon > 0$: $y_1 = 1 - \epsilon$, $y_i = 2^{i-1}$ for $2 \leq i \leq n$, $x_1 = 1.5$, and $x_i = 2^{i-1}$ for $i = 2, \ldots , n$. The optimum matching has cost $.5 + \epsilon$ (for matching $x_1$ with $y_1$ and 0 for matching $x_i = y_i$ for $i \neq 1$). However, the greedy solution will match $x_1$ with $y_2$ forcing $x_i$ to match with $y_{i+1}$ for $i = 2, \ldots , n - 1$ and $x_n$ to match with $y_1$. The cost of the greedy solution will be $\approx 2^{n+1}$.
+    \sout{Consider the following instance for any $\epsilon > 0$: $y_1 = 1 - \epsilon$, $y_i = 2^{i-1}$, $x_1 = 1.5$, $x_i = 2^{i-1}$ for $2 \le i \le n$. The optimum matching has cost $.5 + \epsilon$ (for matching $x_1$ with $y_1$ and 0 for matching $x_i = y_i$ for $i \neq 1$). However, the greedy solution will match $x_1$ with $y_2$ forcing $x_i$ to match with $y_{i+1}$ for $i = 2, \ldots , n - 1$ and $x_n$ to match with $y_1$. The cost of the greedy solution will be $\approx 2^{n+1}$.} \footnote{I don't believe this approach is correct. The greedy solution would not match $x_1$ with $y_2$ -- it would produce a matching that is the same as the optimal solution, i.e., $x_i$ with $y_i$ for all $i$.}
+
+    Consider the instance where we have $y_i = 2^i + 1$ for $1 \le i \le n$, and $x_1 = 0$, $x_i = 2^i + 1$ for $2 \le i \le n$. Suppose the agents arrive in order such that they wish to visit $y_1$, then $y_2$, and so on. The optimal solution is to match $x_i$ with $y_i$ (for all $i$), which results in a total cost of 2 (for matching $x_1$ with $y_1$, and 0 for the remaining).
+
+    Now consider the greedy solution. The first arriving agent (who wishes to visit $y_1$) will park at $x_2$, since $|y_1 - x_2| = 2 < |y_1 - x_1| = 3$. For the agents wishing to visit $y_2, \cdots, y_{n-1}$, the agent visiting $y_i$ will look to park at $x_i$. Since $x_i$ is occupied by the $(i-1)^{th}$ agent, it will park at the next nearest parking spot. The nearest two adjacent and available parking spots (relative to $y_i$) are at $x_1$ and $x_{i+1}$. The agent will choose $x_{i+1}$, since $|y_i - x_{i+1}| = 2^i < |y_i - x_1| = 2^i + 1$. The only agent who has not been considered at this point is the one visiting $y_n$, who's only choice is to park at $x_1$. The total cost of the greedy solution is thus
+    \begin{align*}
+        \sum_{i=1}^{n-1} \left| y_i - x_{i+1} \right| + \left| y_n - x_1 \right| &= \sum_{i=1}^{n-1} \left| 2^i + 1 - (2^{i+1} + 1) \right| + \left| 2^n + 1 - (0) \right| \\
+        &= \sum_{i=1}^{n-1} 2^i + 2^n + 1 \\
+        &= 2^{n+1} - 1
+    \end{align*}
 \end{proof}
 
 We want to again show that agents can be incentivized (by parking costs) to greedily park so as to achieve an $O(\log n)$ competitive ratio. The high level approach will be as follows: 
