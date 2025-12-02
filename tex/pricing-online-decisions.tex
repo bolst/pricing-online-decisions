@@ -1,7 +1,38 @@
 \documentclass[12pt,twoside]{article}
 \usepackage{openwork}
 
+\usepackage{tikz}
+\usepackage{mdframed}
+
+\newif\ifshowdiffs
+
+% comment this to hide diffs
+% \showdiffstrue
+
+\newmdenv[
+  topline=false,
+  bottomline=false,
+  rightline=false,
+  linewidth=1pt,
+  innerleftmargin=4pt,
+  skipabove=0pt,
+  skipbelow=0pt
+]{diffblock}
+
+\NewEnviron{diffsection}[1][olive]
+{
+  \ifshowdiffs
+  \begin{diffblock}[linecolor=#1]
+    \BODY
+  \end{diffblock}
+  \else
+  \BODY
+  \fi
+}
+
 \setlength{\headheight}{15pt}
+
+%%%%%%%%%%%%%%%%%%
 
 \title{Decentralized Mechanisms: Pricing Online Decisions}
 \author{Allan Borodin, Denis Pankratov (Modified by Nic Bolton)}
@@ -46,74 +77,79 @@ We now suppose that requests for service at a location $r$ are being made by age
 \begin{claim}
   When agent acts greedily using the above payment, the location of the servers and the distance movement costs will weakly simulate the lazy $DC$ algorithm. In particular, if agents only serve a request by an adjacent server and break ties in the same way as the lazy $DC$ algorithm then the distance costs will be bounded by the distance costs of the lazy $DC$ algorithm.
 \end{claim}
-\begin{proof}
-  Suppose we have a request $r \in I(s)$ where $s$ is an arbitrary server. Consider another server $s' \neq s$ and the sequence of servers between $s$ and $s'$, namely $(s_0 = s', s_1, \dots , s_n = s)$ such that the interval of each server $I(s_i)$ intersects the interval $[s', r]$. Using \eqref{pricing}, for $0 \le i < n$ we have
-  \begin{align*}
-    p(s_i) &= p(s_{i+1}) + \left| s_{i+1} - \tau(i,i+1) \right| - \left| s_i - \tau(i,i+1) \right| \\
-    &\geq p(s_{i+1}) - \left| s_{i+1} - s_{i} \right|
-  \end{align*}
+\begin{diffsection}
+  \begin{proof}
+    Suppose we have a request $r \in I(s)$ where $s$ is an arbitrary server. Consider another server $s' \neq s$ and the sequence of servers between $s$ and $s'$, namely $(s_0 = s', s_1, \dots , s_n = s)$ such that the interval of each server $I(s_i)$ intersects the interval $[s', r]$. Using \eqref{pricing}, for $0 \le i < n$ we have
+    \begin{align*}
+      p(s_i) &= p(s_{i+1}) + \left| s_{i+1} - \tau(i,i+1) \right| - \left| s_i - \tau(i,i+1) \right| \\
+      &\geq p(s_{i+1}) - \left| s_{i+1} - s_{i} \right|
+    \end{align*}
 
-  This is done via triangle inequality (which is an equality in our case of a line metric), i.e., $|s_{i} - s_{i+1}| = |s_{i} - \tau(i,i+1)| + |\tau(i,i+1) - s_{i+1}|$. We then take a summation on both sides, where for any $j \le n$ we obtain
-  \begin{align*}
-    \sum_{i=0}^{j-1} p(s_i) &\geq \sum_{i=0}^{j-1} \left( p(s_{i+1}) - \left| s_{i+1} - s_i \right| \right) \\
-    \sum_{i=0}^{j-1} p(s_i) &\geq \sum_{i=1}^{j} p(s_{i}) - \sum_{i=0}^{j-1} \left| s_{i+1} - s_i \right| \\
-    p(s_0) &\geq p(s_j) - \left| s_j - s_0 \right| \\
-    \implies p(s_j) &\le p(s') + \left|s' - s_j\right| \numberthis \label{pineq}
-  \end{align*}
+    This is done via triangle inequality (which is an equality in our case of a line metric), i.e., $|s_{i} - s_{i+1}| = |s_{i} - \tau(i,i+1)| + |\tau(i,i+1) - s_{i+1}|$. We then take a summation on both sides, where for any $j \le n$ we obtain
+    \begin{align*}
+      \sum_{i=0}^{j-1} p(s_i) &\geq \sum_{i=0}^{j-1} \left( p(s_{i+1}) - \left| s_{i+1} - s_i \right| \right) \\
+      \sum_{i=0}^{j-1} p(s_i) &\geq \sum_{i=1}^{j} p(s_{i}) - \sum_{i=0}^{j-1} \left| s_{i+1} - s_i \right| \\
+      p(s_0) &\geq p(s_j) - \left| s_j - s_0 \right| \\
+      \implies p(s_j) &\le p(s') + \left|s' - s_j\right| \numberthis \label{pineq}
+    \end{align*}
 
-  We arrive at two cases. The first is if $s_n = s \in [s',r]$, then \eqref{pineq} can be used to derive $p(s') + |s' - r| = p(s') + |s' - s| + |s - r| \ge p(s) + |s - r|$, which shows how the agent making request $r$ is incentivized to choose $s$ as this choice minimizes the cost that the agent inherits.
+    We arrive at two cases. The first is if $s_n \in [s',r]$ (i.e., $s \in [s',r]$), then \eqref{pineq} can be used to derive $p(s') + |s' - r| = p(s') + |s' - s| + |s - r| \ge p(s) + |s - r|$ (triangle inequality), which shows how the agent making request $r$ is incentivized to choose $s$ as this choice minimizes the cost that the agent inherits.
 
-  The other case is where $s_n = s \notin [s', r]$. Note that $s \notin [s', r] \iff r \in [s',s)$. Since $s_{n-1}$ and $s_n = s$ are adjacent, we have $|s-\tau(s_{n-1},s)| \ge |s - r|$ which allows us to derive
-  \begin{align*}
-    p(s) + \left| s - r \right| &\le p(s) + \left|s - \tau(s_{n-1}, s) \right| \\
-    &= p(s_{n-1}) + \left| s_{n-1} - \tau(s_{n-1}, s) \right|
-  \end{align*}
+    The other case is where $s_n = s \notin [s', r]$. Note that $s \notin [s', r] \iff r \in [s',s)$. Since $s_{n-1}$ and $s_n = s$ are adjacent, we have $|s-\tau(s_{n-1},s)| \ge |s - r|$ which allows us to derive
+    \begin{align*}
+      p(s) + \left| s - r \right| &\le p(s) + \left|s - \tau(s_{n-1}, s) \right| \\
+      &= p(s_{n-1}) + \left| s_{n-1} - \tau(s_{n-1}, s) \right|
+    \end{align*}
 
-  Recall that $r \in I(s) \implies |s_{n-1} - \tau(s_{n-1}, s)| \le |s_{n-1} - r|$:
-  \begin{align*}
-    p(s) + \left| s - r \right| &\le p(s_{n-1}) + \left| s_{n-1} - \tau (s_{n-1}, s) \right| \\
-    &\le p(s_{n-1}) + \left| s_{n-1} - r \right|
-  \end{align*}
+    Recall that $r \in I(s) \implies |s_{n-1} - \tau(s_{n-1}, s)| \le |s_{n-1} - r|$:
+    \begin{align*}
+      p(s) + \left| s - r \right| &\le p(s_{n-1}) + \left| s_{n-1} - \tau (s_{n-1}, s) \right| \\
+      &\le p(s_{n-1}) + \left| s_{n-1} - r \right|
+    \end{align*}
 
-  Finally, apply \eqref{pineq} to get $p(s_{n-1}) + |s_{n-1} - r| \le p(s') + |s' - s_{n-1}| + |s_{n-1} - r| = p(s') + |s' - r|$. Thus we arrive at the same result, namely $p(s) + |s-r| \le p(s') + |s' - r|$, where (just as in the first case) the agent is incentivized to choose $s$.
+    Finally, apply \eqref{pineq} to get $p(s_{n-1}) + |s_{n-1} - r| \le p(s') + |s' - s_{n-1}| + |s_{n-1} - r| = p(s') + |s' - r|$. Thus we arrive at the same result, namely $p(s) + |s-r| \le p(s') + |s' - r|$, where (just as in the first case) the agent is incentivized to choose $s$.
 
-  We have shown that for any agent making a request $r$, it always is incentivized to choose the server whose interval contains $r$ (i.e., $s$ such that $r \in I(s)$). By assuming every agent will break ties the same way that lazy $DC$ does, then we conclude the server locations and the distance movement costs will weakly simulate lazy $DC$.
-\end{proof}
+    We have shown that for any agent making a request $r$, it always is incentivized to choose the server whose interval contains $r$ (i.e., $s$ such that $r \in I(s)$). By assuming every agent will break ties the same way that lazy $DC$ does, then we conclude the server locations and the distance movement costs will weakly simulate lazy $DC$.
+  \end{proof}
+\end{diffsection}
 
 \begin{claim}
   Even if the greedy agents do not break ties as does the lazy $DC$ algorithm, there is a modified payments scheme that will guarantee the same asymptotic bound on the movement costs and hence the competitive ratio will be $k$.
 \end{claim}
-\begin{proof}
-  Consider a request $r$ located somewhere between two adjacent servers $s_i, s_{i+1}$. We are interested in the scenario where a choice of either server results in minimizing the cost inherited by the agent making the request, i.e., when $|s_i - r| + p(s_i) = |s_{i+1} - r| + p(s_{i+1})$.
+\begin{diffsection}
 
-  This scenario occurs when the request $r$ is made at $\tau(s_i, s_{i+1})$ and we get back the original pricing scheme as defined in \eqref{pricing}. In this case, whether the agent chooses $s_i$ or $s_{i+1}$ is nonetheless acceptable (in the context of simulating lazy $DC$), as either could be matched with $r$ in a minimum cost matching.
+  \begin{proof}
+    Consider a request $r$ located somewhere between two adjacent servers $s_i, s_{i+1}$. We are interested in the scenario where a choice of either server results in minimizing the cost inherited by the agent making the request, i.e., when $|s_i - r| + p(s_i) = |s_{i+1} - r| + p(s_{i+1})$.
 
-  All that is left for consideration is the other non-adjacent servers. The consideration applies to all pairs of successive servers $s_j, s_{j+1}$ whose threshold point $\tau (s_j, s_{j+1})$ does not lie strictly between them (i.e., it is located exactly on either of $s_j$ or $s_{j+1}$). If $\tau(s_j, s_{j+1}) = s_j$ and $r$ arrives at location $s_j$, the agent is indifferent between using server $s_j$ (a local move) and $s_{j+1}$ (a non-local move). If the agent breaks the tie by choosing $s_{j+1}$, the locality property is violated, and the agent is no longer simulating lazy $DC$.
-  \begin{align*}
-    p(s_j) + \left| s_j - \tau(s_j, s_{j+1}) \right| &= p(s_{j+1}) + \left| s_{j+1} - \tau(s_j, s_{j+1}) \right| \\
-    p(s_j) &= p(s_{j+1}) + \left| s_{j+1} - s_j \right| \ \ \ \ \left( \because \tau(s_j, s_{j+1}) = s_j \right) \\
-    &= p(s_{j+1}) + |s_{j+1} - r|
-  \end{align*}
+    This scenario occurs when the request $r$ is made at $\tau(s_i, s_{i+1})$ and we get back the original pricing scheme as defined in \eqref{pricing}. In this case, whether the agent chooses $s_i$ or $s_{i+1}$ is nonetheless acceptable (in the context of simulating lazy $DC$), as either could be matched with $r$ in a minimum cost matching.
 
-  We employ a perturbation argument by modifying the pricing scheme to ensure that for any pair of adjacent servers, the threshold vertex is strictly between them. Let $\epsilon > 0$ be an arbitrarily small constant. Whenever the pricing equation implies that $\tau(s_j, s_{j+1})$ coincides with a server location (e.g., $s_j$), we shift the threshold $\tau(s_j, s_{j+1})$ by $\epsilon$ towards $s_{j+1}$. Consequently, if a request is at location $s_j$ then the cost to use $s_j$ is now strictly less than the cost to use $s_{j+1}$. The greedy agent is forced to behave ``locally'', restoring the simulation of lazy $DC$.
+    All that is left for consideration is the other non-adjacent servers. The consideration applies to all pairs of successive servers $s_j, s_{j+1}$ whose threshold point $\tau (s_j, s_{j+1})$ does not lie strictly between them (i.e., it is located exactly on either of $s_j$ or $s_{j+1}$). If $\tau(s_j, s_{j+1}) = s_j$ and $r$ arrives at location $s_j$, the agent is indifferent between using server $s_j$ (a local move) and $s_{j+1}$ (a non-local move). If the agent breaks the tie by choosing $s_{j+1}$, the locality property is violated, and the agent is no longer simulating lazy $DC$.
+    \begin{align*}
+      p(s_j) + \left| s_j - \tau(s_j, s_{j+1}) \right| &= p(s_{j+1}) + \left| s_{j+1} - \tau(s_j, s_{j+1}) \right| \\
+      p(s_j) &= p(s_{j+1}) + \left| s_{j+1} - s_j \right| \ \ \ \ \left( \because \tau(s_j, s_{j+1}) = s_j \right) \\
+      &= p(s_{j+1}) + |s_{j+1} - r|
+    \end{align*}
 
-  Let the new threshold be $\tau'(s_j, s_{j+1}) = \tau(s_j, s_{j+1}) + \epsilon = s_j + \epsilon$. Then we must also have new prices to accomodate this
-  \begin{align*}
-    p'(s_j) + \left| s_j - \tau'(s_j, s_{j+1}) \right| &= p'(s_{j+1}) + |s_{j+1} - \tau'(s_j, s_{j+1})| \\
-    p'(s_j) + \epsilon &= p'(s_{j+1}) + \left| s_{j+1} - s_j - \epsilon \right| \\
-    p'(s_j) + 2\epsilon &= p'(s_{j+1}) + \left| s_{j+1} - s_j \right| \ \ \ \ (\because |s_{j+1} - s_j| > \epsilon)
-  \end{align*}
+    We employ a perturbation argument by modifying the pricing scheme to ensure that for any pair of adjacent servers, the threshold vertex is strictly between them (and thus the agent will not make a choice that breaks the locaility property). Let $\epsilon > 0$ be an arbitrarily small constant. Whenever the pricing equation implies that $\tau(s_j, s_{j+1})$ coincides with a server location (e.g., $s_j$), we shift the threshold $\tau(s_j, s_{j+1})$ by $\epsilon$ towards $s_{j+1}$. Consequently, if a request is at location $s_j$ then the cost to use $s_j$ is now strictly less than the cost to use $s_{j+1}$. The greedy agent is forced to behave ``locally'', restoring the simulation of lazy $DC$.
 
-  The agent will make their decision with these updated costs, specifically $p'(s_j) + |s_j - r| = p'(s_j)$ for $s_j$, and $p'(s_{j+1}) + |s_{j+1} - r| = p'(s_{j+1}) + |s_{j+1} - s_j|$ for $s_{j+1}$. Obviously the agent is incentivized to choose $s_j$ now (just as lazy $DC$ would), as:
-  \begin{align*}
-    p'(s_{j+1}) + \left| s_{j+1} - s_j \right| = p'(s_j) + 2\epsilon > p'(s_j)
-  \end{align*}
+    Let the new threshold be $\tau'(s_j, s_{j+1}) = \tau(s_j, s_{j+1}) + \epsilon = s_j + \epsilon$. Then we must also have new prices to accomodate this
+    \begin{align*}
+      p'(s_j) + \left| s_j - \tau'(s_j, s_{j+1}) \right| &= p'(s_{j+1}) + |s_{j+1} - \tau'(s_j, s_{j+1})| \\
+      p'(s_j) + \epsilon &= p'(s_{j+1}) + \left| s_{j+1} - s_j - \epsilon \right| \\
+      p'(s_j) + 2\epsilon &= p'(s_{j+1}) + \left| s_{j+1} - s_j \right| \ \ \ \ (\because |s_{j+1} - s_j| > \epsilon)
+    \end{align*}
 
-  We must account for the cost overhead introduced by this perturbation. For a sequence of $n$ requests, we can choose a perturbation $\epsilon_k = \delta / 2^k$ for the $k^{th}$ request, where $\delta$ is a small constant. The total additional additive cost incurred by the mechanism is bounded by:
-  $$ \sum_{k=1}^{n} \epsilon_k = \sum_{k=1}^{n} \frac{\delta}{2^k} < \sum_{k=1}^{\infty} \frac{\delta}{2^k} = \delta $$
+    The agent will make their decision with these updated costs, specifically $p'(s_j) + |s_j - r| = p'(s_j)$ for $s_j$, and $p'(s_{j+1}) + |s_{j+1} - r| = p'(s_{j+1}) + |s_{j+1} - s_j|$ for $s_{j+1}$. Obviously the agent is incentivized to choose $s_j$ now (just as lazy $DC$ would), as:
+    \begin{align*}
+      p'(s_{j+1}) + \left| s_{j+1} - s_j \right| = p'(s_j) + 2\epsilon > p'(s_j)
+    \end{align*}
 
-  Since the total cost is strictly less than arbitrarily small $\delta$ and is independent of the number of requests $n$, this additive constant does not affect the asymptotic competitive ratio. Thus, even with adversarial tie-breaking by agents, we can enforce the simulation of lazy $DC$ with negligible cost overhead.
-\end{proof}
+    We must account for the cost overhead introduced by this perturbation. For a sequence of $n$ requests, we can choose a perturbation $\epsilon_k = \delta / 2^k$ for the $k^{th}$ request and some small constant $\delta \ll 1$. The total additional additive cost incurred by the mechanism is bounded by:
+    $$ \sum_{k=1}^{n} \epsilon_k = \sum_{k=1}^{n} \frac{\delta}{2^k} < \sum_{k=1}^{\infty} \frac{\delta}{2^k} = \delta $$
+
+    Since the total cost is strictly less than the arbitrarily small $\delta$ and is independent of the number of requests $n$, this additive constant does not affect the asymptotic competitive ratio. Thus, even with adversarial tie-breaking by agents, we can enforce the simulation of lazy $DC$ with negligible cost overhead.
+  \end{proof}
+\end{diffsection}
 
 \subsubsection{The Parking Problem on the Line}
 
@@ -135,16 +171,22 @@ We will first observe that the natural greedy algorithm has a very poor performa
   The competitive ratio for the natural greedy algorithm (and hence if agents act greedily) is exponential in $n$ where $n$ is the number of online requests.
 \end{claim}
 \begin{proof}
-  \sout{Consider the following instance for any $\epsilon > 0$: $y_1 = 1 - \epsilon$, $y_i = 2^{i-1}$, $x_1 = 1.5$, $x_i = 2^{i-1}$ for $2 \le i \le n$. The optimum matching has cost $.5 + \epsilon$ (for matching $x_1$ with $y_1$ and 0 for matching $x_i = y_i$ for $i \neq 1$). However, the greedy solution will match $x_1$ with $y_2$ forcing $x_i$ to match with $y_{i+1}$ for $i = 2, \ldots , n - 1$ and $x_n$ to match with $y_1$. The cost of the greedy solution will be $\approx 2^{n+1}$.} \footnote{I don't believe this approach is correct. The greedy solution would not match $x_1$ with $y_2$ -- it would produce a matching that is the same as the optimal solution, i.e., $x_i$ with $y_i$ for all $i$.}
+  \begin{diffsection}[red]
+    \sout{Consider the following instance for any $\epsilon > 0$: $y_1 = 1 - \epsilon$, $y_i = 2^{i-1}$, $x_1 = 1.5$, $x_i = 2^{i-1}$ for $2 \le i \le n$. The optimum matching has cost $.5 + \epsilon$ (for matching $x_1$ with $y_1$ and 0 for matching $x_i = y_i$ for $i \neq 1$). However, the greedy solution will match $x_1$ with $y_2$ forcing $x_i$ to match with $y_{i+1}$ for $i = 2, \ldots , n - 1$ and $x_n$ to match with $y_1$. The cost of the greedy solution will be $\approx 2^{n+1}$.} \footnote{I don't believe this approach is correct. The greedy solution would not match $x_1$ with $y_2$ -- it would produce a matching that is the same as the optimal solution, i.e., $x_i$ with $y_i$ for all $i$.}
+  \end{diffsection}
+  \begin{diffsection}
 
-  Consider the instance where we have $y_i = 2^i + 1$ for $1 \le i \le n$, and $x_1 = 0$, $x_i = 2^i + 1$ for $2 \le i \le n$. Suppose the agents arrive in order such that they wish to visit $y_1$, then $y_2$, and so on. The optimal solution is to match $x_i$ with $y_i$ (for all $i$), which results in a total cost of 2 (for matching $x_1$ with $y_1$, and 0 for the remaining).
+    Consider the instance where we have $y_i = 2^i + 1$ for $1 \le i \le n$, and $x_1 = 0$, $x_i = 2^i + 1$ for $2 \le i \le n$. Suppose the agents arrive in order such that they wish to visit $y_1$, then $y_2$, and so on. The optimal solution is to match each $x_i$ with $y_i$, which results in a total cost of 3 (for matching $x_1$ with $y_1$, and 0 for the remaining).
 
-  Now consider the greedy solution. The first arriving agent (who wishes to visit $y_1$) will park at $x_2$, since $|y_1 - x_2| = 2 < |y_1 - x_1| = 3$. For the agents wishing to visit $y_2, \cdots, y_{n-1}$, the agent visiting $y_i$ will look to park at $x_i$. Since $x_i$ is occupied by the $(i-1)^{th}$ agent, it will park at the next nearest parking spot. The nearest two adjacent and available parking spots (relative to $y_i$) are at $x_1$ and $x_{i+1}$. The agent will choose $x_{i+1}$, since $|y_i - x_{i+1}| = 2^i < |y_i - x_1| = 2^i + 1$. The only agent who has not been considered at this point is the one visiting $y_n$, who's only choice is to park at $x_1$. The total cost of the greedy solution is thus
-  \begin{align*}
-    \sum_{i=1}^{n-1} \left| y_i - x_{i+1} \right| + \left| y_n - x_1 \right| &= \sum_{i=1}^{n-1} \left| 2^i + 1 - (2^{i+1} + 1) \right| + \left| 2^n + 1 - (0) \right| \\
-    &= \sum_{i=1}^{n-1} 2^i + 2^n + 1 \\
-    &= 2^{n+1} - 1
-  \end{align*}
+    Now consider the greedy solution. The first arriving agent (who wishes to visit $y_1$) will park at $x_2$, since $|y_1 - x_2| = 2 < |y_1 - x_1| = 3$. For the agents wishing to visit $y_2, \cdots, y_{n-1}$, the agent visiting $y_i$ will look to park at $x_i$. Since $x_i$ is occupied by the $(i-1)^{th}$ agent, it will park at the next nearest parking spot. The nearest two adjacent and available parking spots (relative to $y_i$) are at $x_1$ and $x_{i+1}$. The agent will choose $x_{i+1}$, since $|y_i - x_{i+1}| = 2^i < |y_i - x_1| = 2^i + 1$. The only agent who has not been considered at this point is the one visiting $y_n$, who's only choice is to park at $x_1$. The total cost of the greedy solution is thus
+    \begin{align*}
+      \sum_{i=1}^{n-1} \left| y_i - x_{i+1} \right| + \left| y_n - x_1 \right| &= \sum_{i=1}^{n-1} \left| 2^i + 1 - (2^{i+1} + 1) \right| + \left| 2^n + 1 - (0) \right| \\
+      &= \sum_{i=1}^{n-1} 2^i + 2^n + 1 \\
+      &= 2^{n+1} - 1
+    \end{align*}
+
+    and we conclude competitive ratio $\rho = 2^{n+1}/3 = O(2^n)$.
+  \end{diffsection}
 \end{proof}
 
 We want to again show that agents can be incentivized (by parking costs) to greedily park so as to achieve an $O(\log n)$ competitive ratio. The high level approach will be as follows:
@@ -154,68 +196,72 @@ We want to again show that agents can be incentivized (by parking costs) to gree
   \item There is a randomized dynamic pricing algorithm for parking locations that will incentivize the shopper to simulate the Harmonic algorithm and hence achieve a competitive ratio of $O(\log n)$. The pricing algorithm does not know the arrival location nor the desired location for the $i^{th}$ arrival but only knows which locations are now occupied given the previous $i - 1$ arrivals. When the $i^{th}$ arriving agent chooses location $x_i$, their total cost will be $|x_i - y_i| + p_i(x_i)$
 \end{itemize}
 
-The Harmonic algorithm works as follows. Given an arriving agent, let $d_L$ (resp. $d_R$) be the distance from its desired location to the nearest free parking spot to the left (right) of it. Harmonic assigns the car to the parking spot on the left with probability $d_R / (d_L + d_R)$, and the spot to the right with the remaining probability.
+\begin{diffsection}
 
-From this point on, for a given instance of the parking problem on a line, we will denote $X = \{x_1, \dots, x_n\}$ and $Y = \{y_1, \dots, y_n\}$ as the set of all parking spots and destinations respectively. As agent $i$ arrives, we define the following:
-\begin{itemize}
-  \item $X' = \{x_1, \dots, x_k\}$: the current set of available parking spots
-  \item $B_1, B_2, \dots, B_l \subseteq X$: the current set of ``blocks'' (a maximal contiguous run of occupied parking spaces)
-  \item $L(B_j)$ (resp. $R(B_j)$): the first available parking spot to the left (right) of block $B_j$
-  \item $d_j = d(L(B_j), R(B_j))$
-  \item $D_1, D_2, \dots, D_l$: a set of distribubtions, where every $D_j$ is uniformly distributed over the real interval $[-d_j, d_j]$
-\end{itemize}
+  The Harmonic algorithm works as follows. Given an arriving agent, let $d_L$ (resp. $d_R$) be the distance from its desired location to the nearest free parking spot to the left (right) of it. Harmonic assigns the car to the parking spot on the left with probability $d_R / (d_L + d_R)$, and the spot to the right with the remaining probability.
 
-Finally, we say that a pricing scheme $p$ satisfies \textit{Harmonic Payment Conditions} if:
-\begin{enumerate}
-  \item $\forall j \in \{1, \dots, l\}$, $p(L(B_j)) - p(R(B_j)) \sim D_j$.
-  \item For any $x_i, x_j \in X'$ such that there are no available parking spots between $x_i$ and $x_j$, $-d(x_i,x_j) < p(x_i) - p(x_j) < d(x_i,x_j)$.
-\end{enumerate}
-and that a pricing scheme \textit{ensures harmonic behaviour} if when an agent arrives:
-\begin{enumerate}
-  \item They park at their goal if available.
-  \item If not available, they park at one of the two closest available parking spots to the left or right of their goal with harmonic probabilities.
-\end{enumerate}
+  From this point on, for a given instance of the parking problem on a line, we will denote $X = \{x_1, \dots, x_n\}$ and $Y = \{y_1, \dots, y_n\}$ as the set of all parking spots and destinations respectively. As agent $i$ arrives, we define the following:
+  \begin{itemize}
+    \item $X' = \{x_1, \dots, x_k\}$: the current set of available parking spots
+    \item $B_1, B_2, \dots, B_l \subseteq X$: the current set of ``blocks'' (a maximal contiguous run of occupied parking spaces)
+    \item $L(B_j)$ (resp. $R(B_j)$): the first available parking spot to the left (right) of block $B_j$
+    \item $d_j = d(L(B_j), R(B_j))$
+    \item $D_1, D_2, \dots, D_l$: a set of distribubtions, where every $D_j$ is uniformly distributed over the real interval $[-d_j, d_j]$
+  \end{itemize}
 
-\begin{claim}
-  A given pricing scheme $p$ which satisfies Harmonic Payment Conditions will ensure harmonic behaviour for the arriving (selfish) agents.
-\end{claim}
-\begin{proof}
-  Let $y \in Y$ be the destination goal of an arriving agent. Note that in the second of the Harmonic Payment Conditions, if $x_i=y$, then $p(y) < d(y,x_j) + p(x_j)$. This simply says that if there is a parking spot available at the agent's destination, they will park there.
+  Finally, we say that a pricing scheme $p$ satisfies \textit{Harmonic Payment Conditions} if:
+  \begin{enumerate}
+    \item $\forall j \in \{1, \dots, l\}$, $p(L(B_j)) - p(R(B_j)) \sim D_j$.
+    \item For any $x_i, x_j \in X'$ such that there are no available parking spots between $x_i$ and $x_j$, $-d(x_i,x_j) < p(x_i) - p(x_j) < d(x_i,x_j)$.
+  \end{enumerate}
+  and that a pricing scheme \textit{ensures harmonic behaviour} if when an agent arrives:
+  \begin{enumerate}
+    \item They park at their goal if available.
+    \item If not available, they park at one of the two closest available parking spots to the left or right of their goal with harmonic probabilities.
+  \end{enumerate}
 
-  Assume otherwise, i.e., $x \in B_j$ for some $j$. Let $x_L = L(B_j)$ and $x_R = R(B_j)$. For any available parking spot $x' \in X'$ to the left of $x_L$, we have $d(x,x_L) + p(x_L) < d(x,x_L) + d(x_L, x') + p(x') = d(x,x') + p(x')$ via the second Harmonic Payment Condition. This applies symmetrically to the right as well, i.e., $d(x,x_R) + p(x_R) < d(x,x') + p(x')$. This ensures that the agent will choose one of either $x_L$ or $x_R$.
+  \begin{claim}
+    A given pricing scheme $p$ which satisfies Harmonic Payment Conditions will ensure harmonic behaviour for the arriving (selfish) agents.
+  \end{claim}
+  \begin{proof}
+    Let $y \in Y$ be the destination goal of an arriving agent. Note that in the second of the Harmonic Payment Conditions, if $x_i=y$, then $p(y) < d(y,x_j) + p(x_j)$. This simply says that if there is a parking spot available at the agent's destination, they will park there.
 
-  Let $F_j$ be the CDF of $D_j$, i.e., $F_j (x) = (2d_j)^{-1}\int_{-d_j}^{x} \mathrm{d}u = (x+d_j) / 2d_j$. Using this we can derive
-  \begin{align*}
-    &\prob{\text{The agent chooses } x_L} \\
-    &= \prob{d(x,x_L) + p(x_L) \le d(x,x_R) + p(x_R)} \\
-    &= \prob{p(x_L) - p(x_R) \le x_R + x_L - 2x} \\
-    (\because x_R - x_L = d_j) \ \ \ \ &= \prob{p(x_L) - p(x_R) \le d_j - 2d(x, x_L)} \\
-    (\because \text{first Harmonic Payment Condition}) \ \ \ \ &= F_j(d_j - 2d(x,x_L)) \\
-    &= \frac{d(x,x_R)}{d_j}
-  \end{align*}
+    Assume otherwise, i.e., $x \in B_j$ for some $j$. Let $x_L = L(B_j)$ and $x_R = R(B_j)$. For any available parking spot $x' \in X'$ to the left of $x_L$, we have $d(x,x_L) + p(x_L) < d(x,x_L) + d(x_L, x') + p(x') = d(x,x') + p(x')$ via the second Harmonic Payment Condition. This applies symmetrically to the right as well, i.e., $d(x,x_R) + p(x_R) < d(x,x') + p(x')$. This ensures that the agent will choose one of either $x_L$ or $x_R$.
 
-  Therefore, using $p$ ensures harmonic behaviour for the arriving agents.
-\end{proof}
+    Let $F_j$ be the CDF of $D_j$, i.e., $F_j (x) = (2d_j)^{-1}\int_{-d_j}^{x} \mathrm{d}u = (x+d_j) / 2d_j$. Using this we can derive
+    \begin{align*}
+      &\prob{\text{The agent chooses } x_L} \\
+      &= \prob{d(x,x_L) + p(x_L) \le d(x,x_R) + p(x_R)} \\
+      &= \prob{p(x_L) - p(x_R) \le x_R + x_L - 2x} \\
+      (\because x_R - x_L = d_j) \ \ \ \ &= \prob{p(x_L) - p(x_R) \le d_j - 2d(x, x_L)} \\
+      (\because \text{first Harmonic Payment Condition}) \ \ \ \ &= F_j(d_j - 2d(x,x_L)) \\
+      &= \frac{d(x,x_R)}{d_j}
+    \end{align*}
 
-Now we will consider what exactly a pricing scheme that satisfies Harmonic Payment Conditions looks like.
+    Therefore, using $p$ ensures harmonic behaviour for the arriving agents.
+  \end{proof}
 
-\begin{claim}
-  Let $S(x) = \{ j : 1 \le j \le l \text{ and } x \text{ is left of } B_j \}$ and $q_j \sim D_j$ for $1 \le j \le l$. The pricing scheme $p(x) = c + \sum_{j \in R(x)} q_j$ satisfies the Harmonic Payment Conditions for any constant $c$.
-\end{claim}
-\begin{proof}
-  (\textit{First condition}) Consider any $j$ such that $1 \le j \le l$. Then $p(L(B_j)) - p(R(B_j)) = \sum_{i \in S(L(B_j))} q_i - \sum_{i \in S(R(B_j))} q_i$.
+  Now we will consider what exactly a pricing scheme that satisfies Harmonic Payment Conditions looks like.
 
-  Note that $S(L(B_j))$ contains the indices of all blocks strictly to the right of $L(B_j)$. Since $L(B_j)$ is immediately to the left of block $B_j$, the set $S(L(B_j))$ includes $j$ as well as all blocks to the right of $B_j$. Conversely, $R(B_j)$ is to the right of $B_j$, so $S(R(B_j))$ includes all blocks to the right of $B_j$ but \textit{excludes} $j$. Thus, the set difference is exactly $S(L(B_j)) \setminus S(R(B_j)) = \{ j \}$.
+  \begin{claim}
+    Let $S(x) = \{ j : 1 \le j \le l \text{ and } x \text{ is left of } B_j \}$ and $q_j \sim D_j$ for $1 \le j \le l$. The pricing scheme $p(x) = c + \sum_{j \in R(x)} q_j$ satisfies the Harmonic Payment Conditions for any constant $c$.
+  \end{claim}
+  \begin{proof}
+    (\textit{First condition}) Consider any $j$ such that $1 \le j \le l$. Then $p(L(B_j)) - p(R(B_j)) = \sum_{i \in S(L(B_j))} q_i - \sum_{i \in S(R(B_j))} q_i$.
 
-  Substituting this back into the difference equation, we get that the first Harmonic Payment Condition is satisfied, i.e., $p(L(B_j)) - p(R(B_j)) = \sum_{i \in S(L(B_j))} q_i - \sum_{i \in S(R(B_j))} q_i = q_j \sim D_j$.
+    Note that $S(L(B_j))$ contains the indices of all blocks strictly to the right of $L(B_j)$. Since $L(B_j)$ is immediately to the left of block $B_j$, the set $S(L(B_j))$ includes $j$ as well as all blocks to the right of $B_j$. Conversely, $R(B_j)$ is to the right of $B_j$, so $S(R(B_j))$ includes all blocks to the right of $B_j$ but \textit{excludes} $j$. Thus, the set difference is exactly $S(L(B_j)) \setminus S(R(B_j)) = \{ j \}$.
 
-  (\textit{Second condition}) Consider two available parking spots $x_L, x_R \in X'$ such that $x_L$ is to the left of $x_R$ and there are no available spots between them. If $x_L$ and $x_R$ are adjacent to each other, then $S(x_L) = S(x_R)$ and so $p(x_L) - p(x_R) = 0 < d(x_L, x_R) = 1$ (and consequentially, $-d(x_L, x_R) < p(x_L) - p(x_R)$).
+    Substituting this back into the difference equation, we get that the first Harmonic Payment Condition is satisfied, i.e., $p(L(B_j)) - p(R(B_j)) = \sum_{i \in S(L(B_j))} q_i - \sum_{i \in S(R(B_j))} q_i = q_j \sim D_j$.
 
-  Now consider the other case, i.e., assume there is a block $B_j$ between $x_L$ and $x_R$. Consequentially we get $x_L = L(B_j)$ and $x_R = R(B_j)$. From the proof of the first condition, we know that $p(x_L) - p(x_R) = q_j \sim D_j$. Since $q_j$ can take on any value in $[-d_j, d_j]$, and $d_j = d(L(B_j), R(B_j)) = d(x_L, x_R)$, we have that $-d(x_L, x_R) < q_j < d(x_L, x_R)$. Thus, the second condition is satisfied.
+    (\textit{Second condition}) Consider two available parking spots $x_L, x_R \in X'$ such that $x_L$ is to the left of $x_R$ and there are no available spots between them. If $x_L$ and $x_R$ are adjacent to each other, then $S(x_L) = S(x_R)$ and so $p(x_L) - p(x_R) = 0 < d(x_L, x_R) = 1$ (and consequentially, $-d(x_L, x_R) < p(x_L) - p(x_R)$).
 
-  Therefore, $p(x) = c + \sum_{j \in R(x)} q_j$ satisfies the Harmonic Payment Conditions.
-\end{proof}
+    Now consider the other case, i.e., assume there is a block $B_j$ between $x_L$ and $x_R$. Consequentially we get $x_L = L(B_j)$ and $x_R = R(B_j)$. From the proof of the first condition, we know that $p(x_L) - p(x_R) = q_j \sim D_j$. Since $q_j$ can take on any value in $[-d_j, d_j]$, and $d_j = d(L(B_j), R(B_j)) = d(x_L, x_R)$, we have that $-d(x_L, x_R) < q_j < d(x_L, x_R)$. Thus, the second condition is satisfied.
 
+    Therefore, $p(x) = c + \sum_{j \in R(x)} q_j$ satisfies the Harmonic Payment Conditions.
+  \end{proof}
+\end{diffsection}
+
+\nocite{*}
 \printbibliography
 
 \end{document}
